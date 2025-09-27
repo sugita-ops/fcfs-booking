@@ -1,0 +1,20 @@
+{
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "DATABASE_URL": "@database_url",
+      "JWT_SECRET": "@jwt_secret",
+      "HMAC_SECRET": "@hmac_secret",
+      "DW_WEBHOOK_URL": "@dw_webhook_url",
+      "DANDORI_API_BASE_URL": "@dandori_api_base_url",
+      "DANDORI_BEARER_TOKEN": "@dandori_bearer_token"
+    }
+  },
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  }
+}
