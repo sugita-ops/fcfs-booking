@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fcfs_booking_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Setup environment variables
+      run: |
+        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fcfs_booking_test" >> $GITHUB_ENV
+        echo "JWT_SECRET=test-secret-key-for-ci" >> $GITHUB_ENV
+        echo "HMAC_SECRET=test-hmac-secret-for-ci" >> $GITHUB_ENV
+        echo "DW_WEBHOOK_URL=http://localhost:3001/webhook/test" >> $GITHUB_ENV
+
+    - name: Run database migrations
+      run: npm run db:migrate
+
+    - name: Seed test data
+      run: npm run db:seed
+
+    - name: Run type check
+      run: npm run type-check
+
+    - name: Run lint
+      run: npm run lint
+
+    - name: Run unit tests
+      run: npm run test:run
+
+    - name: Run concurrent claims test
+      run: |
+        # Start the Next.js server in background
+        npm run build
+        npm start &
+        SERVER_PID=$!
+
+        # Wait for server to be ready
+        sleep 10
+
+        # Run concurrent test
+        npm run test:concurrent 5
+
+        # Clean up
+        kill $SERVER_PID || true
+
+    - name: Generate test coverage (if available)
+      run: npm run test:run -- --coverage || echo "Coverage not configured"
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: |
+          coverage/
+          test-results.xml
+        retention-days: 7
