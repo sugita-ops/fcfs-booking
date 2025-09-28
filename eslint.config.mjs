@@ -1,7 +1,5 @@
 /**
- * Flat ESLint config for Next.js 15 / ESLint 9.
- * CI/Vercel ビルドでは lint を完全に無効化（必要になったら差し替えてください）
+ * Completely disable ESLint for Vercel builds
+ * すべてのESLintチェックを無効化
  */
-export default [
-  { ignores: ['**/*'] }  // 全ファイル無視（lintしない）
-];
+export default [];

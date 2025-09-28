@@ -2,6 +2,7 @@
 const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true, // ビルド時の ESLint エラーを無視
+    dirs: [], // ESLintチェック対象を空にする
   },
   typescript: {
     ignoreBuildErrors: true, // ビルド時の TypeScript エラーを無視
