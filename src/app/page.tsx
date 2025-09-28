@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { JobSlot, ClaimRequest, AlternativesResponse } from '@/types/api';
+import BookingForm from '@/components/BookingForm';
+import BookingHistory from '@/components/BookingHistory';
 
 interface JobPost {
   id: string;
@@ -24,6 +26,9 @@ export default function Home() {
   const [claimingSlot, setClaimingSlot] = useState<string | null>(null);
   const [companyId, setCompanyId] = useState('');
   const [alternatives, setAlternatives] = useState<AlternativesResponse | null>(null);
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<JobSlotWithPost | null>(null);
+  const [showBookingHistory, setShowBookingHistory] = useState(false);
 
   // 利用可能なスロットを取得（実際のAPIエンドポイントを作成する必要があります）
   const fetchAvailableSlots = async () => {
@@ -89,8 +94,14 @@ export default function Home() {
     }
   };
 
-  // スロットを予約する
-  const claimSlot = async (slotId: string) => {
+  // 詳細予約フォームを開く
+  const openBookingForm = (slot: JobSlotWithPost) => {
+    setSelectedSlot(slot);
+    setShowBookingForm(true);
+  };
+
+  // 簡単予約（従来の方法）
+  const quickClaim = async (slotId: string) => {
     if (!companyId.trim()) {
       alert('会社IDを入力してください');
       return;
@@ -158,22 +169,34 @@ export default function Home() {
           </p>
         </div>
 
-        {/* 会社ID入力 */}
+        {/* 予約情報と操作 */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">予約情報</h2>
-          <div className="max-w-md">
-            <label htmlFor="companyId" className="block text-sm font-medium text-gray-700 mb-2">
-              会社ID *
-            </label>
-            <input
-              type="text"
-              id="companyId"
-              value={companyId}
-              onChange={(e) => setCompanyId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="例: company-123"
-              required
-            />
+          <div className="flex justify-between items-start">
+            <div className="flex-1 max-w-md">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">予約情報</h2>
+              <label htmlFor="companyId" className="block text-sm font-medium text-gray-700 mb-2">
+                会社ID *
+              </label>
+              <input
+                type="text"
+                id="companyId"
+                value={companyId}
+                onChange={(e) => setCompanyId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="例: company-123"
+                required
+              />
+            </div>
+
+            <div className="ml-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">マイページ</h3>
+              <button
+                onClick={() => setShowBookingHistory(true)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+              >
+                予約履歴を見る
+              </button>
+            </div>
           </div>
         </div>
 
@@ -220,16 +243,23 @@ export default function Home() {
 
                   <div className="space-y-2">
                     <button
-                      onClick={() => claimSlot(slot.id)}
+                      onClick={() => openBookingForm(slot)}
+                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      詳細予約フォーム
+                    </button>
+
+                    <button
+                      onClick={() => quickClaim(slot.id)}
                       disabled={!companyId.trim() || claimingSlot === slot.id}
                       className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                     >
-                      {claimingSlot === slot.id ? '予約中...' : '今すぐ予約'}
+                      {claimingSlot === slot.id ? '予約中...' : '簡単予約'}
                     </button>
 
                     <button
                       onClick={() => fetchAlternatives(slot.id)}
-                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
                     >
                       代替案を見る
                     </button>
@@ -254,7 +284,7 @@ export default function Home() {
                     <p className="text-sm text-gray-600">職種: {alt.job_post.trade}</p>
                     <p className="text-sm text-gray-600">作業日: {alt.work_date}</p>
                     <button
-                      onClick={() => claimSlot(alt.slot_id)}
+                      onClick={() => quickClaim(alt.slot_id)}
                       disabled={!companyId.trim() || claimingSlot === alt.slot_id}
                       className="mt-2 w-full px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
                     >
@@ -285,6 +315,26 @@ export default function Home() {
             </a>
           </div>
         </div>
+
+        {/* 詳細予約フォーム */}
+        {showBookingForm && selectedSlot && (
+          <BookingForm
+            slot={selectedSlot}
+            onClose={() => {
+              setShowBookingForm(false);
+              setSelectedSlot(null);
+            }}
+            onSuccess={() => {
+              fetchAvailableSlots();
+            }}
+          />
+        )}
+
+        {/* 予約履歴 */}
+        <BookingHistory
+          isOpen={showBookingHistory}
+          onClose={() => setShowBookingHistory(false)}
+        />
       </div>
     </div>
   );
