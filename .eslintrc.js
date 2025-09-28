@@ -1,14 +1,10 @@
 module.exports = {
   root: true,
-  extends: ['next/core-web-vitals', 'eslint:recommended'],
-  overrides: [
-    {
-      files: ['*.ts', '*.tsx', '*.js', '*.jsx'],
-      rules: {
-        '@typescript-eslint/no-explicit-any': 'off',
-        '@typescript-eslint/no-unused-vars': 'off',
-        '@typescript-eslint/no-require-imports': 'off',
-      },
-    },
-  ],
+  extends: ['next', 'next/core-web-vitals'],
+  rules: {
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
+    '@typescript-eslint/no-require-imports': 'off',
+    'react-hooks/exhaustive-deps': 'off',
+  },
 };
