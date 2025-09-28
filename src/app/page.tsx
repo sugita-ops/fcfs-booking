@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { JobSlot, ClaimRequest, AlternativesResponse } from '@/types/api';
 import BookingForm from '@/components/BookingForm';
 import BookingHistory from '@/components/BookingHistory';
@@ -29,6 +30,8 @@ export default function Home() {
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<JobSlotWithPost | null>(null);
   const [showBookingHistory, setShowBookingHistory] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const router = useRouter();
 
   // 利用可能なスロットを取得（実際のAPIエンドポイントを作成する必要があります）
   const fetchAvailableSlots = async () => {
@@ -153,21 +156,95 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // ユーザー情報の確認
+    const user = localStorage.getItem('currentUser');
+    if (user) {
+      setCurrentUser(JSON.parse(user));
+    }
+
     fetchAvailableSlots();
   }, []);
 
+  const logout = () => {
+    localStorage.removeItem('currentUser');
+    setCurrentUser(null);
+    router.push('/login');
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* ヘッダー */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            FCFS工事予約システム
-          </h1>
-          <p className="text-xl text-gray-600">
-            先着順で工事スロットを予約できます
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* ナビゲーションバー */}
+      {currentUser && (
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center space-x-4">
+                <h1 className="text-xl font-bold text-gray-900">
+                  🏗️ FCFS工事予約システム
+                </h1>
+                <span className="text-sm text-gray-500">下請け業者向け</span>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <span className="font-medium">{currentUser.name}</span>
+                  <span>({currentUser.role})</span>
+                </div>
+                {(currentUser.role === '経営者' || currentUser.role === 'システム管理') && (
+                  <button
+                    onClick={() => router.push('/contractor')}
+                    className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                  >
+                    元請けビュー
+                  </button>
+                )}
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
+                >
+                  ダッシュボード
+                </button>
+                <button
+                  onClick={logout}
+                  className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                >
+                  ログアウト
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+      )}
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* ゲストユーザー向けヘッダー */}
+        {!currentUser && (
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              FCFS工事予約システム
+            </h1>
+            <p className="text-xl text-gray-600 mb-6">
+              先着順で工事スロットを予約できます
+            </p>
+            <button
+              onClick={() => router.push('/login')}
+              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+            >
+              ログインして利用開始
+            </button>
+          </div>
+        )}
+
+        {/* ログインユーザー向けヘッダー */}
+        {currentUser && (
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              工事スロット予約
+            </h1>
+            <p className="text-xl text-gray-600">
+              利用可能な工事スロットから選択して予約
+            </p>
+          </div>
+        )}
 
         {/* 予約情報と操作 */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">

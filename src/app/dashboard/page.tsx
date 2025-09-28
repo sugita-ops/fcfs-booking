@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface BookingRecord {
@@ -48,12 +49,26 @@ export default function Dashboard() {
     todaysBookings: 0
   });
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const router = useRouter();
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
+    // ユーザー情報の確認
+    const user = localStorage.getItem('currentUser');
+    if (user) {
+      setCurrentUser(JSON.parse(user));
+    }
+
     loadDashboardData();
   }, []);
+
+  const logout = () => {
+    localStorage.removeItem('currentUser');
+    setCurrentUser(null);
+    router.push('/login');
+  };
 
   const loadDashboardData = () => {
     setLoading(true);
@@ -188,21 +203,65 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50">
+      {/* ナビゲーションバー */}
+      {currentUser && (
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center space-x-4">
+                <h1 className="text-xl font-bold text-gray-900">
+                  📊 予約状況ダッシュボード
+                </h1>
+                <span className="text-sm text-gray-500">データ分析・監視</span>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <span className="font-medium">{currentUser.name}</span>
+                  <span>({currentUser.role})</span>
+                </div>
+                <button
+                  onClick={() => router.push('/')}
+                  className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                >
+                  メインページ
+                </button>
+                {(currentUser.role === '経営者' || currentUser.role === 'システム管理') && (
+                  <button
+                    onClick={() => router.push('/contractor')}
+                    className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+                  >
+                    元請けビュー
+                  </button>
+                )}
+                <button
+                  onClick={logout}
+                  className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                >
+                  ログアウト
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* ヘッダー */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">予約状況ダッシュボード</h1>
+          <h1 className="text-3xl font-bold text-gray-900">予約状況監視</h1>
           <p className="text-gray-600 mt-2">工事スロットの予約状況をリアルタイムで確認</p>
 
-          <div className="mt-4 flex space-x-4">
-            <Link href="/" className="text-blue-600 hover:text-blue-800 transition-colors">
-              ← メインページに戻る
-            </Link>
-            <Link href="/admin" className="text-blue-600 hover:text-blue-800 transition-colors">
-              管理画面
-            </Link>
-          </div>
+          {!currentUser && (
+            <div className="mt-4 flex space-x-4">
+              <button
+                onClick={() => router.push('/login')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                ログインして機能を利用
+              </button>
+            </div>
+          )}
         </div>
 
         {loading ? (
