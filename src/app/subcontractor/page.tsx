@@ -201,14 +201,12 @@ export default function SubcontractorDashboard() {
                 <span className="font-medium">{currentUser.name}</span>
                 <span>({currentUser.role})</span>
               </div>
-              {(currentUser.role === '経営者' || currentUser.role === 'システム管理') && (
-                <button
-                  onClick={() => router.push('/contractor')}
-                  className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
-                >
-                  元請けビュー
-                </button>
-              )}
+              <button
+                onClick={() => router.push('/contractor')}
+                className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+              >
+                元請けビュー
+              </button>
               <button
                 onClick={() => router.push('/dashboard')}
                 className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"

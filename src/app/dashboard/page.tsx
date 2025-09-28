@@ -226,14 +226,12 @@ export default function Dashboard() {
               >
                 下請けビュー
               </button>
-                {(currentUser.role === '経営者' || currentUser.role === 'システム管理') && (
-                  <button
-                    onClick={() => router.push('/contractor')}
-                    className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
-                  >
-                    元請けビュー
-                  </button>
-                )}
+                <button
+                  onClick={() => router.push('/contractor')}
+                  className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+                >
+                  元請けビュー
+                </button>
                 <button
                   onClick={logout}
                   className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"

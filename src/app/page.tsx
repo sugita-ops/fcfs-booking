@@ -3,102 +3,38 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface UserRole {
+interface UserType {
   id: string;
   name: string;
-  role: string;
-  department: string;
-  permissions: string[];
+  description: string;
+  features: string[];
   color: string;
   icon: string;
+  route: string;
 }
 
-const predefinedUsers: UserRole[] = [
+const businessTypes: UserType[] = [
   {
-    id: 'super_admin',
-    name: 'スーパー管理者',
-    role: 'システム管理',
-    department: '',
-    permissions: ['全権限'],
-    color: 'bg-blue-500',
-    icon: '⚡'
-  },
-  {
-    id: 'yamada_taro',
-    name: '山田 太郎',
-    role: '経営者',
-    department: '経営管理',
-    permissions: ['スケジュール管理', '売上分析', '現場管理'],
-    color: 'bg-red-500',
-    icon: '👨‍💼'
-  },
-  {
-    id: 'suzuki_ichiro',
-    name: '鈴木 一郎',
-    role: '支店長',
-    department: '東京支店',
-    permissions: ['自分のスケジュール確認', '作業報告書作成', '予定変更申請'],
-    color: 'bg-cyan-500',
-    icon: '💼'
-  },
-  {
-    id: 'sato_jiro',
-    name: '佐藤 次郎',
-    role: '営業担当',
-    department: '営業部',
-    permissions: ['自分のスケジュール確認', '作業進捗登録', 'チャット機能'],
-    color: 'bg-orange-500',
-    icon: '👨‍💼'
-  },
-  {
-    id: 'yamada_aiko',
-    name: '山田 愛子',
-    role: '経理担当',
-    department: '経理部',
-    permissions: ['請求書作成', '入金管理', '財務分析'],
-    color: 'bg-purple-500',
-    icon: '👩‍💼'
-  },
-  {
-    id: 'kimura_kenta',
-    name: '木村 健太',
-    role: 'マーケティング',
-    department: 'マーケティング部',
-    permissions: ['キャンペーン管理', 'Web分析', 'SEO対策'],
-    color: 'bg-green-500',
-    icon: '📊'
-  },
-  {
-    id: 'tanaka_saburo',
-    name: '田中 三郎',
-    role: '施工管理',
-    department: '施工部',
-    permissions: ['現場管理', '作業指示', '品質管理'],
-    color: 'bg-orange-600',
-    icon: '👷‍♂️'
-  },
-  {
-    id: 'takahashi_hanako',
-    name: '高橋 花子',
-    role: '事務員',
-    department: '事務部',
-    permissions: ['資料作成', '電話対応', 'スケジュール管理'],
-    color: 'bg-purple-600',
-    icon: '👩‍💼'
-  },
-  {
-    id: 'nakamura_jiro',
-    name: '中村 次郎',
-    role: 'アフター担当',
-    department: 'アフターサービス部',
-    permissions: ['アフター対応', '顧客フォロー', '修理依頼管理'],
+    id: 'contractor',
+    name: '元請け業者',
+    description: '工事の発注・管理を行う総合管理業者',
+    features: ['プロジェクト管理', '工事スロット作成', '下請け業者管理', '売上分析'],
     color: 'bg-blue-600',
-    icon: '🔧'
+    icon: '🏗️',
+    route: '/contractor'
+  },
+  {
+    id: 'subcontractor',
+    name: '下請け業者',
+    description: '工事を実際に施工する専門業者',
+    features: ['工事スロット予約', '作業スケジュール管理', '予約履歴確認', '代替案検索'],
+    color: 'bg-green-600',
+    icon: '🔨',
+    route: '/subcontractor'
   }
 ];
 
 export default function LoginPage() {
-  const [selectedUser, setSelectedUser] = useState<UserRole | null>(null);
   const [showManualLogin, setShowManualLogin] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -109,8 +45,8 @@ export default function LoginPage() {
     const user = localStorage.getItem('currentUser');
     if (user) {
       const parsedUser = JSON.parse(user);
-      // 役割に応じてリダイレクト
-      if (parsedUser.role === '経営者' || parsedUser.role === 'システム管理') {
+      // 業者タイプに応じてリダイレクト
+      if (parsedUser.type === 'contractor') {
         router.push('/contractor');
       } else {
         router.push('/subcontractor');
@@ -118,16 +54,20 @@ export default function LoginPage() {
     }
   }, [router]);
 
-  const handleQuickLogin = (user: UserRole) => {
+  const handleBusinessTypeLogin = (businessType: UserType) => {
+    // ユーザー情報を作成
+    const user = {
+      type: businessType.id,
+      name: businessType.name,
+      role: businessType.name,
+      loginTime: new Date().toISOString()
+    };
+
     // ローカルストレージにユーザー情報を保存
     localStorage.setItem('currentUser', JSON.stringify(user));
 
-    // 役割に応じてリダイレクト
-    if (user.role === '経営者' || user.role === 'システム管理') {
-      router.push('/contractor'); // 元請けダッシュボード
-    } else {
-      router.push('/subcontractor'); // 下請けダッシュボード
-    }
+    // 選択した業者タイプに応じてリダイレクト
+    router.push(businessType.route);
   };
 
   const handleManualLogin = (e: React.FormEvent) => {
@@ -142,119 +82,60 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* ヘッダー */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            🚀 デモ用クイックログイン
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+            🏗️ FCFS工事予約システム
           </h1>
-          <p className="text-xl text-gray-600">
-            役割を選択してシステムにアクセス
+          <p className="text-2xl text-gray-600 mb-4">
+            業者タイプを選択してシステムにアクセス
+          </p>
+          <p className="text-lg text-gray-500">
+            先着順で工事スロットを効率的に管理
           </p>
         </div>
 
-        {/* クイックログインカード */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {predefinedUsers.map((user) => (
-            <div
-              key={user.id}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200"
-              onClick={() => handleQuickLogin(user)}
-            >
-              <div className="flex items-start space-x-4">
-                <div className={`w-12 h-12 ${user.color} rounded-full flex items-center justify-center text-white text-xl`}>
-                  {user.icon}
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                    {user.name}
+        {/* 業者タイプ選択カード */}
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            {businessTypes.map((businessType) => (
+              <div
+                key={businessType.id}
+                className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow cursor-pointer border border-gray-200 hover:border-blue-300"
+                onClick={() => handleBusinessTypeLogin(businessType)}
+              >
+                <div className="text-center mb-6">
+                  <div className={`w-20 h-20 ${businessType.color} rounded-full flex items-center justify-center text-white text-4xl mx-auto mb-4`}>
+                    {businessType.icon}
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    {businessType.name}
                   </h3>
-                  <p className="text-blue-600 font-medium text-sm mb-1">
-                    {user.role}
+                  <p className="text-gray-600 text-lg">
+                    {businessType.description}
                   </p>
-                  {user.department && (
-                    <p className="text-gray-600 text-sm mb-2">
-                      {user.department}
-                    </p>
-                  )}
-                  <div className="space-y-1">
-                    <p className="text-xs text-gray-500 font-medium">権限:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {user.permissions.slice(0, 3).map((permission, index) => (
-                        <span
-                          key={index}
-                          className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                        >
-                          {permission}
-                        </span>
-                      ))}
-                      {user.permissions.length > 3 && (
-                        <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                          +{user.permissions.length - 3}
-                        </span>
-                      )}
-                    </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-gray-700 mb-3">主な機能:</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {businessType.features.map((feature, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-sm text-gray-700">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-6 text-center">
+                  <div className={`inline-flex items-center px-4 py-2 ${businessType.color} text-white rounded-lg font-medium`}>
+                    {businessType.name}でログイン →
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 手動ログイン切り替え */}
-        <div className="text-center">
-          <button
-            onClick={() => setShowManualLogin(!showManualLogin)}
-            className="text-blue-600 hover:text-blue-700 font-medium"
-          >
-            {showManualLogin ? 'クイックログインに戻る' : '手動ログインを使用'}
-          </button>
-        </div>
-
-        {/* 手動ログインフォーム */}
-        {showManualLogin && (
-          <div className="mt-8 max-w-md mx-auto">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-                ログイン
-              </h2>
-              <form onSubmit={handleManualLogin} className="space-y-4">
-                <div>
-                  <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                    ユーザー名
-                  </label>
-                  <input
-                    type="text"
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="ユーザー名を入力"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                    パスワード
-                  </label>
-                  <input
-                    type="password"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="パスワードを入力"
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  ログイン
-                </button>
-              </form>
-            </div>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* フッター */}
         <div className="mt-12 text-center text-gray-500 text-sm">

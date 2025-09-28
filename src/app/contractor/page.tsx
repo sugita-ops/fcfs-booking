@@ -61,7 +61,7 @@ export default function ContractorDashboard() {
     setCurrentUser(parsedUser);
 
     // 元請け権限チェック
-    if (parsedUser.role !== '経営者' && parsedUser.role !== 'システム管理') {
+    if (parsedUser.type !== 'contractor') {
       router.push('/subcontractor');
       return;
     }
