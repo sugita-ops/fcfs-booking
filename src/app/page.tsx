@@ -307,6 +307,9 @@ export default function Home() {
         <div className="mt-12 text-center text-gray-500 text-sm">
           <p>© 2024 FCFS工事予約システム</p>
           <div className="mt-2 space-x-4">
+            <a href="/dashboard" className="hover:text-gray-700 transition-colors">
+              予約状況ダッシュボード
+            </a>
             <a href="/admin" className="hover:text-gray-700 transition-colors">
               管理画面
             </a>
