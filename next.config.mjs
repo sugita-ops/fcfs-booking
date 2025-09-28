@@ -1,13 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    ignoreDuringBuilds: true, // ビルド時の ESLint エラーを無視
-    dirs: [], // ESLintチェック対象を空にする
+    ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: true, // ビルド時の TypeScript エラーを無視
+    ignoreBuildErrors: true,
   },
-  // 他の設定があればこの下に
 };
 
 export default nextConfig;
