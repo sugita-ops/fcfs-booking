@@ -67,7 +67,7 @@ export default function Dashboard() {
   const logout = () => {
     localStorage.removeItem('currentUser');
     setCurrentUser(null);
-    router.push('/login');
+    router.push('/');
   };
 
   const loadDashboardData = () => {
@@ -220,12 +220,12 @@ export default function Dashboard() {
                   <span className="font-medium">{currentUser.name}</span>
                   <span>({currentUser.role})</span>
                 </div>
-                <button
-                  onClick={() => router.push('/')}
-                  className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
-                >
-                  メインページ
-                </button>
+              <button
+                onClick={() => router.push('/subcontractor')}
+                className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+              >
+                下請けビュー
+              </button>
                 {(currentUser.role === '経営者' || currentUser.role === 'システム管理') && (
                   <button
                     onClick={() => router.push('/contractor')}
@@ -255,7 +255,7 @@ export default function Dashboard() {
           {!currentUser && (
             <div className="mt-4 flex space-x-4">
               <button
-                onClick={() => router.push('/login')}
+                onClick={() => router.push('/')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
                 ログインして機能を利用

@@ -53,7 +53,7 @@ export default function ContractorDashboard() {
     // ユーザー情報の確認
     const user = localStorage.getItem('currentUser');
     if (!user) {
-      router.push('/login');
+      router.push('/');
       return;
     }
 
@@ -62,7 +62,7 @@ export default function ContractorDashboard() {
 
     // 元請け権限チェック
     if (parsedUser.role !== '経営者' && parsedUser.role !== 'システム管理') {
-      router.push('/');
+      router.push('/subcontractor');
       return;
     }
 
@@ -196,7 +196,7 @@ export default function ContractorDashboard() {
 
   const logout = () => {
     localStorage.removeItem('currentUser');
-    router.push('/login');
+    router.push('/');
   };
 
   if (loading) {
@@ -229,7 +229,7 @@ export default function ContractorDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => router.push('/')}
+                onClick={() => router.push('/subcontractor')}
                 className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
               >
                 下請けビュー
