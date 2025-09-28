@@ -24,7 +24,7 @@ interface RequeueResponse {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Authentication and authorization
@@ -34,7 +34,8 @@ export async function POST(
       return forbiddenError('Admin access required');
     }
 
-    const eventId = parseInt(params.id);
+    const resolvedParams = await params;
+    const eventId = parseInt(resolvedParams.id);
 
     if (isNaN(eventId)) {
       return jsonError('INVALID_EVENT_ID', 'Invalid event ID format', 400);

@@ -9,7 +9,7 @@ import {
 
 interface AuthCheckResponse {
   user: {
-    user_id: string | null;
+    user_id: string | null | undefined;
     tenant_id: string;
     role: string;
   };

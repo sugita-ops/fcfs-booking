@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PoolClient } from 'pg';
 import { requireAuth } from '@/lib/auth';
 import { withTransaction, setTenantContext, generateUuid } from '@/lib/database';
@@ -309,9 +309,11 @@ export async function POST(request: NextRequest) {
     const validationErrors = validateCsvData(body.data, schema, body.type);
     if (validationErrors.length > 0) {
       // Return first 5 validation errors
-      return jsonError('VALIDATION_FAILED', 'CSV data validation failed', 422, {
+      return NextResponse.json({
+        code: 'VALIDATION_FAILED',
+        message: 'CSV data validation failed',
         errors: validationErrors.slice(0, 5)
-      });
+      }, { status: 422 });
     }
 
     const importId = generateUuid();

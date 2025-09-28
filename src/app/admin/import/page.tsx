@@ -87,12 +87,12 @@ export default function AdminImportPage() {
 
         // Convert boolean values
         if (value.toLowerCase() === 'true') {
-          value = true;
+          row[header] = true;
         } else if (value.toLowerCase() === 'false') {
-          value = false;
+          row[header] = false;
+        } else {
+          row[header] = value === '' ? null : value;
         }
-
-        row[header] = value === '' ? null : value;
       });
 
       data.push(row);

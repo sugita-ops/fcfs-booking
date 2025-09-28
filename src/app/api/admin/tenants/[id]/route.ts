@@ -28,7 +28,7 @@ interface TenantUpdateResponse {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Authentication and authorization
@@ -38,7 +38,8 @@ export async function GET(
       return forbiddenError('Admin access required');
     }
 
-    const targetTenantId = params.id;
+    const resolvedParams = await params;
+    const targetTenantId = resolvedParams.id;
 
     const result = await withTransaction(async (client: PoolClient) => {
       // Get specific tenant
@@ -76,7 +77,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Authentication and authorization
@@ -86,7 +87,8 @@ export async function PUT(
       return forbiddenError('Admin access required');
     }
 
-    const targetTenantId = params.id;
+    const resolvedParams = await params;
+    const targetTenantId = resolvedParams.id;
 
     // Parse and validate request body
     const body = await request.json() as TenantUpdateRequest;
