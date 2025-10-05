@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import ProjectForm from '@/components/ProjectForm';
+import SlotForm from '@/components/SlotForm';
+import SubcontractorForm from '@/components/SubcontractorForm';
 
 interface Project {
   id: string;
@@ -47,6 +50,10 @@ export default function ContractorDashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [jobSlots, setJobSlots] = useState<JobSlot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [showSlotForm, setShowSlotForm] = useState(false);
+  const [showSubcontractorForm, setShowSubcontractorForm] = useState(false);
+  const [subcontractors, setSubcontractors] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -197,6 +204,43 @@ export default function ContractorDashboard() {
   const logout = () => {
     localStorage.removeItem('currentUser');
     router.push('/');
+  };
+
+  // プロジェクト関連のハンドラー
+  const handleProjectSubmit = (projectData: any) => {
+    const newProject = {
+      ...projectData,
+      id: `proj-${Date.now()}`,
+      actualCost: 0,
+      progress: 0
+    };
+    setProjects([...projects, newProject]);
+    alert('プロジェクトが作成されました！');
+  };
+
+  // スロット関連のハンドラー
+  const handleSlotSubmit = (slotData: any) => {
+    const newSlot = {
+      ...slotData,
+      id: `slot-${Date.now()}`,
+      status: 'open' as const,
+      assignedCompany: null
+    };
+    setJobSlots([...jobSlots, newSlot]);
+    alert('工事スロットが作成されました！');
+  };
+
+  // 下請け業者関連のハンドラー
+  const handleSubcontractorSubmit = (subcontractorData: any) => {
+    const newSubcontractor = {
+      ...subcontractorData,
+      id: `sub-${Date.now()}`,
+      rating: 0,
+      completedJobs: 0,
+      status: 'pending' as const
+    };
+    setSubcontractors([...subcontractors, newSubcontractor]);
+    alert('下請け業者が登録されました！審査後に承認されます。');
   };
 
   if (loading) {
@@ -370,7 +414,10 @@ export default function ContractorDashboard() {
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900">プロジェクト一覧</h3>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+              <button
+                onClick={() => setShowProjectForm(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
                 新規プロジェクト作成
               </button>
             </div>
@@ -452,7 +499,10 @@ export default function ContractorDashboard() {
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900">工事スロット管理</h3>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+              <button
+                onClick={() => setShowSlotForm(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
                 新規スロット作成
               </button>
             </div>
@@ -523,7 +573,10 @@ export default function ContractorDashboard() {
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900">登録下請け業者</h3>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+              <button
+                onClick={() => setShowSubcontractorForm(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
                 新規業者登録
               </button>
             </div>
@@ -551,6 +604,26 @@ export default function ContractorDashboard() {
             </div>
           </div>
         )}
+
+        {/* フォームモーダル */}
+        <ProjectForm
+          isOpen={showProjectForm}
+          onClose={() => setShowProjectForm(false)}
+          onSubmit={handleProjectSubmit}
+        />
+
+        <SlotForm
+          isOpen={showSlotForm}
+          onClose={() => setShowSlotForm(false)}
+          onSubmit={handleSlotSubmit}
+          projects={projects.map(p => ({ id: p.id, name: p.name }))}
+        />
+
+        <SubcontractorForm
+          isOpen={showSubcontractorForm}
+          onClose={() => setShowSubcontractorForm(false)}
+          onSubmit={handleSubcontractorSubmit}
+        />
       </div>
     </div>
   );
