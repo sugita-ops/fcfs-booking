@@ -238,7 +238,7 @@ export default function ContractorDashboard() {
             {/* モバイル: タイトルのみ */}
             <div className="flex items-center space-x-2 md:space-x-4">
               <h1 className="text-base md:text-2xl font-bold text-gray-900">
-                🏗️ 元請けダッシュボード
+                🏗️ ダンドリブッキング
               </h1>
               {currentUser && (
                 <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
