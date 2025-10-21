@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import ProjectForm from '@/components/ProjectForm';
 import SlotForm from '@/components/SlotForm';
 import SubcontractorForm from '@/components/SubcontractorForm';
+import SearchFilterForm from '@/components/SearchFilterForm';
+import { getSlots, SearchParams, MockJobSlotWithPost } from '@/lib/mock-data';
 
 interface Project {
   id: string;
@@ -48,12 +50,13 @@ export default function ContractorDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'slots' | 'subcontractors'>('overview');
   const [stats, setStats] = useState<ContractorStats | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [jobSlots, setJobSlots] = useState<JobSlot[]>([]);
+  const [jobSlots, setJobSlots] = useState<MockJobSlotWithPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [showSlotForm, setShowSlotForm] = useState(false);
   const [showSubcontractorForm, setShowSubcontractorForm] = useState(false);
   const [subcontractors, setSubcontractors] = useState<any[]>([]);
+  const [searchParams, setSearchParams] = useState<SearchParams>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -76,7 +79,7 @@ export default function ContractorDashboard() {
     loadContractorData();
   }, [router]);
 
-  const loadContractorData = async () => {
+  const loadContractorData = async (params: SearchParams = {}) => {
     setLoading(true);
 
     // ダミーデータ（実際のAPIと置き換え）
@@ -133,46 +136,18 @@ export default function ContractorDashboard() {
       }
     ];
 
-    const dummyJobSlots: JobSlot[] = [
-      {
-        id: 'slot-1',
-        projectId: 'proj-1',
-        projectName: '新宿オフィスビル建設',
-        trade: '基礎工',
-        workDate: '2024-12-01',
-        status: 'open',
-        assignedCompany: null,
-        unitPrice: 150000,
-        description: '基礎コンクリート打設作業'
-      },
-      {
-        id: 'slot-2',
-        projectId: 'proj-1',
-        projectName: '新宿オフィスビル建設',
-        trade: '鉄筋工',
-        workDate: '2024-12-03',
-        status: 'assigned',
-        assignedCompany: '鉄筋工業(株)',
-        unitPrice: 200000,
-        description: '鉄筋組立作業'
-      },
-      {
-        id: 'slot-3',
-        projectId: 'proj-2',
-        projectName: '渋谷マンション改修',
-        trade: '内装工',
-        workDate: '2024-12-20',
-        status: 'open',
-        assignedCompany: null,
-        unitPrice: 120000,
-        description: '室内クロス張替え'
-      }
-    ];
+    // モックデータから工事スロット取得
+    const slots = getSlots(params);
 
     setStats(dummyStats);
     setProjects(dummyProjects);
-    setJobSlots(dummyJobSlots);
+    setJobSlots(slots);
     setLoading(false);
+  };
+
+  const handleSearch = (params: SearchParams) => {
+    setSearchParams(params);
+    loadContractorData(params);
   };
 
   const getStatusColor = (status: string) => {
@@ -496,74 +471,79 @@ export default function ContractorDashboard() {
 
         {/* 工事スロット管理タブ */}
         {activeTab === 'slots' && (
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">工事スロット管理</h3>
-              <button
-                onClick={() => setShowSlotForm(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                新規スロット作成
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      プロジェクト
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      職種
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      作業日
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      ステータス
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      割当業者
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      単価
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      操作
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {jobSlots.map((slot) => (
-                    <tr key={slot.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{slot.projectName}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {slot.trade}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {slot.workDate}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(slot.status)}`}>
-                          {getStatusText(slot.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {slot.assignedCompany || '未割当'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ¥{slot.unitPrice.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button className="text-blue-600 hover:text-blue-900 mr-3">編集</button>
-                        <button className="text-red-600 hover:text-red-900">削除</button>
-                      </td>
+          <div className="space-y-6">
+            {/* 検索フィルタフォーム */}
+            <SearchFilterForm onSearch={handleSearch} initialParams={searchParams} />
+
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">工事スロット管理 ({jobSlots.length}件)</h3>
+                <button
+                  onClick={() => setShowSlotForm(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  新規スロット作成
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        プロジェクト
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        職種
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        作業日
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ステータス
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        割当業者
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        単価
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        操作
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {jobSlots.map((slot) => (
+                      <tr key={slot.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{slot.project.name}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {slot.job_post.trade}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {slot.work_date}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(slot.status)}`}>
+                            {getStatusText(slot.status)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {slot.claimed_by_company || '未割当'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          ¥{slot.job_post.unit_price.toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button className="text-blue-600 hover:text-blue-900 mr-3">編集</button>
+                          <button className="text-red-600 hover:text-red-900">削除</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

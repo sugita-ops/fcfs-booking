@@ -19,9 +19,12 @@
     "type-check": "tsc --noEmit",
     "test:concurrent": "node scripts/test_concurrent_claims.js",
     "worker:start": "node lib/outbox-worker.js",
-    "worker:test": "node lib/outbox-worker.js test"
+    "worker:test": "node lib/outbox-worker.js test",
+    "check-sw": "node scripts/check-sw.js",
+    "generate-vapid": "node scripts/generate-vapid-keys.js"
   },
   "dependencies": {
+    "@serwist/next": "^9.2.1",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@types/pg": "^8.15.5",
@@ -34,6 +37,7 @@
     "prettier": "^3.6.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "serwist": "^9.2.1",
     "vitest": "^3.2.4",
     "zod": "^4.1.11"
   },
