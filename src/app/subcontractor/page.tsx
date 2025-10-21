@@ -143,9 +143,11 @@ export default function SubcontractorDashboard() {
     const parsedUser = JSON.parse(user);
     setCurrentUser(parsedUser);
 
-    // 初回登録チェック
-    if (!hasCompanyProfile(parsedUser.id)) {
+    // 初回登録チェック & 自社条件フィルタの初期値設定
+    const hasProfile = hasCompanyProfile(parsedUser.id);
+    if (!hasProfile) {
       setShowFirstTimeModal(true);
+      setCompanyFilterEnabled(false); // 未登録時はフィルタOFF
     }
   }, [router]);
 
