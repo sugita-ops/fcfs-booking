@@ -178,13 +178,16 @@ export default function SubcontractorDashboard() {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-bold text-gray-900">
+            {/* モバイル: タイトルのみ表示 */}
+            <div className="flex items-center space-x-2 md:space-x-4">
+              <h1 className="text-base md:text-xl font-bold text-gray-900">
                 🏗️ FCFS工事予約システム
               </h1>
-              <span className="text-sm text-gray-500">下請け業者向け</span>
+              <span className="hidden md:inline text-sm text-gray-500">下請け業者向け</span>
             </div>
-            <div className="flex items-center space-x-4">
+
+            {/* デスクトップ: 全ボタン表示 */}
+            <div className="hidden md:flex items-center space-x-4">
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <span className="font-medium">{currentUser.name}</span>
                 <span>({currentUser.role})</span>
@@ -218,13 +221,13 @@ export default function SubcontractorDashboard() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* ヘッダー */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+        {/* ヘッダー - モバイル最適化 */}
+        <div className="text-center mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2 md:mb-4">
             工事スロット予約
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-sm md:text-xl text-gray-600">
             利用可能な工事スロットから選択して予約
           </p>
         </div>

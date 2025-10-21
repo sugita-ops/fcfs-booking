@@ -231,22 +231,25 @@ export default function ContractorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
+      {/* ヘッダー - モバイル対応 */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-gray-900">
+            {/* モバイル: タイトルのみ */}
+            <div className="flex items-center space-x-2 md:space-x-4">
+              <h1 className="text-base md:text-2xl font-bold text-gray-900">
                 🏗️ 元請けダッシュボード
               </h1>
               {currentUser && (
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
                   <span className="font-medium">{currentUser.name}</span>
                   <span>({currentUser.role})</span>
                 </div>
               )}
             </div>
-            <div className="flex items-center space-x-4">
+
+            {/* デスクトップ: 全ボタン表示 */}
+            <div className="hidden md:flex items-center space-x-4">
               <button
                 onClick={() => router.push('/subcontractor')}
                 className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
