@@ -8,6 +8,8 @@ import SubcontractorForm from '@/components/SubcontractorForm';
 import SearchFilterForm from '@/components/SearchFilterForm';
 import { getSlots, SearchParams, MockJobSlotWithPost } from '@/lib/mock-data';
 
+export const dynamic = 'force-dynamic';
+
 interface Project {
   id: string;
   name: string;
@@ -47,7 +49,7 @@ interface ContractorStats {
 
 export default function ContractorDashboard() {
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'slots' | 'subcontractors'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'slots' | 'subcontractors' | 'integrations'>('overview');
   const [stats, setStats] = useState<ContractorStats | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [jobSlots, setJobSlots] = useState<MockJobSlotWithPost[]>([]);
@@ -82,19 +84,12 @@ export default function ContractorDashboard() {
   const loadContractorData = async (params: SearchParams = {}) => {
     setLoading(true);
 
-    // ダミーデータ（実際のAPIと置き換え）
-    const dummyStats: ContractorStats = {
-      totalProjects: 15,
-      activeProjects: 8,
-      completedProjects: 7,
-      totalBudget: 45000000,
-      totalSpent: 32000000,
-      openSlots: 12,
-      assignedSlots: 25,
-      totalRevenue: 38000000
-    };
+    // localStorageからプロジェクト読み込み
+    const savedProjects = localStorage.getItem('projects');
+    const loadedProjects: Project[] = savedProjects ? JSON.parse(savedProjects) : [];
 
-    const dummyProjects: Project[] = [
+    // デフォルトダミーデータ（プロジェクトが0件の場合のみ）
+    const dummyProjects: Project[] = loadedProjects.length > 0 ? [] : [
       {
         id: 'proj-1',
         name: '新宿オフィスビル建設',
@@ -136,11 +131,30 @@ export default function ContractorDashboard() {
       }
     ];
 
+    const allProjects = [...loadedProjects, ...dummyProjects];
+
+    // 統計情報を計算
+    const activeProjects = allProjects.filter(p => p.status === 'in_progress').length;
+    const completedProjects = allProjects.filter(p => p.status === 'completed').length;
+    const totalBudget = allProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
+    const totalSpent = allProjects.reduce((sum, p) => sum + (p.actualCost || 0), 0);
+
+    const dummyStats: ContractorStats = {
+      totalProjects: allProjects.length,
+      activeProjects,
+      completedProjects,
+      totalBudget,
+      totalSpent,
+      openSlots: 12,
+      assignedSlots: 25,
+      totalRevenue: totalSpent
+    };
+
     // モックデータから工事スロット取得
     const slots = getSlots(params);
 
     setStats(dummyStats);
-    setProjects(dummyProjects);
+    setProjects(allProjects);
     setJobSlots(slots);
     setLoading(false);
   };
@@ -276,7 +290,8 @@ export default function ContractorDashboard() {
                 { key: 'overview', label: '概要', icon: '📊' },
                 { key: 'projects', label: 'プロジェクト管理', icon: '🏗️' },
                 { key: 'slots', label: '工事スロット管理', icon: '📅' },
-                { key: 'subcontractors', label: '下請け業者', icon: '🤝' }
+                { key: 'subcontractors', label: '下請け業者', icon: '🤝' },
+                { key: 'integrations', label: 'API連携', icon: '🔗' }
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -583,6 +598,65 @@ export default function ContractorDashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* API連携タブ */}
+        {activeTab === 'integrations' && (
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900">外部システム連携</h3>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* ダンドリワーク API 連携カード */}
+                <div
+                  onClick={() => router.push('/contractor/integrations/dandori-work')}
+                  className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span className="text-2xl">🔗</span>
+                      </div>
+                    </div>
+                    <div className="ml-4 flex-1">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        ダンドリワーク API 連携
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        ダンドリワークから現場情報を自動取得し、プロジェクトとして同期します。
+                      </p>
+                      <div className="flex items-center text-sm text-blue-600">
+                        <span>設定画面を開く →</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 将来の連携候補（プレースホルダー） */}
+                <div className="border border-gray-200 rounded-lg p-6 opacity-50 cursor-not-allowed">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <span className="text-2xl">📊</span>
+                      </div>
+                    </div>
+                    <div className="ml-4 flex-1">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        その他の連携
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        今後、他の外部システムとの連携を追加予定です。
+                      </p>
+                      <div className="flex items-center text-sm text-gray-400">
+                        <span>準備中</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

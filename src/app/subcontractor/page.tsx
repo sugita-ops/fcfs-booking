@@ -12,6 +12,8 @@ import { getSlots, SearchParams, MockJobSlotWithPost } from '@/lib/mock-data';
 import { getCompanyProfile, hasCompanyProfile } from '@/lib/company-profile';
 import { filterSlotsByCompanyProfile } from '@/lib/company-profile-filter';
 
+export const dynamic = 'force-dynamic';
+
 interface JobPost {
   id: string;
   title: string;

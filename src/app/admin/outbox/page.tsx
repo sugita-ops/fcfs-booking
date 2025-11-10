@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 interface OutboxEvent {
   id: number;
   event_id: string;

@@ -11,6 +11,8 @@ import {
 } from '@/lib/company-profile';
 import MobileBottomNav from '@/components/MobileBottomNav';
 
+export const dynamic = 'force-dynamic';
+
 export default function SubcontractorSettings() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);

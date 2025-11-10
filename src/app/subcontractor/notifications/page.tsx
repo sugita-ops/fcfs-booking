@@ -12,6 +12,8 @@ import {
   Notification
 } from '@/lib/notifications';
 
+export const dynamic = 'force-dynamic';
+
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);

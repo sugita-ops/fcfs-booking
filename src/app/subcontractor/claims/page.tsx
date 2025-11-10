@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { getClaims, MockClaim } from '@/lib/mock-data';
 
+export const dynamic = 'force-dynamic';
+
 export default function ClaimsPage() {
   const [claims, setClaims] = useState<MockClaim[]>([]);
   const [loading, setLoading] = useState(true);
