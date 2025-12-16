@@ -24,7 +24,13 @@
     "generate-vapid": "node scripts/generate-vapid-keys.js"
   },
   "dependencies": {
+    "@fullcalendar/daygrid": "^6.1.19",
+    "@fullcalendar/interaction": "^6.1.19",
+    "@fullcalendar/react": "^6.1.19",
+    "@fullcalendar/timegrid": "^6.1.19",
     "@serwist/next": "^9.2.1",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.87.1",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@types/pg": "^8.15.5",
@@ -37,6 +43,7 @@
     "prettier": "^3.6.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "resend": "^6.6.0",
     "serwist": "^9.2.1",
     "vitest": "^3.2.4",
     "zod": "^4.1.11"

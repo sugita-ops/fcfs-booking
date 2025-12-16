@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 import DevUserSwitcher from "@/components/DevUserSwitcher";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
@@ -53,10 +54,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
-        <DevUserSwitcher />
-        <PWAInstallPrompt />
-        <ServiceWorkerRegister />
+        <AuthProvider>
+          {children}
+          <DevUserSwitcher />
+          <PWAInstallPrompt />
+          <ServiceWorkerRegister />
+        </AuthProvider>
       </body>
     </html>
   );
