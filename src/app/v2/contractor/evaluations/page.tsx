@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createDemoClient } from '@/lib/supabase/demo-client';
 import { notifyEvaluationReceived } from '@/lib/notifications/client';
@@ -96,7 +96,7 @@ function StarRating({
   );
 }
 
-export default function ContractorEvaluationsPage() {
+function ContractorEvaluationsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reportIdParam = searchParams.get('report_id');
@@ -520,5 +520,20 @@ export default function ContractorEvaluationsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ContractorEvaluationsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    }>
+      <ContractorEvaluationsContent />
+    </Suspense>
   );
 }

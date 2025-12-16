@@ -1,6 +1,13 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// ビルド時にAPIキーがなくてもエラーにならないよう遅延初期化
+let resend: Resend | null = null;
+const getResendClient = () => {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+};
 const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@example.com';
 
 export interface EmailPayload {
@@ -17,8 +24,14 @@ export interface EmailResult {
 }
 
 export async function sendEmail(payload: EmailPayload): Promise<EmailResult> {
+  const client = getResendClient();
+  if (!client) {
+    console.warn('[Email] Resend API key not configured, skipping email send');
+    return { success: false, error: 'Email service not configured' };
+  }
+
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await client.emails.send({
       from: `ダンドリブッキング <${fromEmail}>`,
       to: payload.to,
       subject: payload.subject,
