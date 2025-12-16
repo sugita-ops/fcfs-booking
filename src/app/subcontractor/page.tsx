@@ -5,6 +5,14 @@ import { useRouter } from 'next/navigation';
 import { JobSlot, ClaimRequest, AlternativesResponse } from '@/types/api';
 import BookingForm from '@/components/BookingForm';
 import BookingHistory from '@/components/BookingHistory';
+import SearchFilterForm from '@/components/SearchFilterForm';
+import MobileBottomNav from '@/components/MobileBottomNav';
+import PushNotificationPrompt from '@/components/PushNotificationPrompt';
+import { getSlots, SearchParams, MockJobSlotWithPost } from '@/lib/mock-data';
+import { getCompanyProfile, hasCompanyProfile } from '@/lib/company-profile';
+import { filterSlotsByCompanyProfile } from '@/lib/company-profile-filter';
+
+export const dynamic = 'force-dynamic';
 
 interface JobPost {
   id: string;
@@ -22,74 +30,35 @@ interface JobSlotWithPost extends JobSlot {
 }
 
 export default function SubcontractorDashboard() {
-  const [availableSlots, setAvailableSlots] = useState<JobSlotWithPost[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<MockJobSlotWithPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingSlot, setClaimingSlot] = useState<string | null>(null);
   const [companyId, setCompanyId] = useState('');
   const [alternatives, setAlternatives] = useState<AlternativesResponse | null>(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<JobSlotWithPost | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<MockJobSlotWithPost | null>(null);
   const [showBookingHistory, setShowBookingHistory] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [searchParams, setSearchParams] = useState<SearchParams>({ status: 'available' });
+  const [companyFilterEnabled, setCompanyFilterEnabled] = useState(true);
+  const [showFirstTimeModal, setShowFirstTimeModal] = useState(false);
   const router = useRouter();
 
-  // 利用可能なスロットを取得（実際のAPIエンドポイントを作成する必要があります）
-  const fetchAvailableSlots = async () => {
+  // モックデータから利用可能なスロットを取得
+  const fetchAvailableSlots = (params: SearchParams = { status: 'available' }) => {
+    if (!currentUser) return;
+
     try {
       setLoading(true);
-      // TODO: 実際のAPIエンドポイント '/api/slots' を実装する必要があります
-      // const response = await fetch('/api/slots');
-      // const slots = await response.json();
-      // setAvailableSlots(slots);
+      let slots = getSlots(params);
 
-      // 一時的なダミーデータ
-      const dummySlots: JobSlotWithPost[] = [
-        {
-          id: 'slot-1',
-          tenant_id: 'tenant-1',
-          job_post_id: 'job-1',
-          work_date: '2024-12-01',
-          status: 'available',
-          claimed_by_company: null,
-          claimed_by_user: null,
-          claimed_at: null,
-          created_at: '2024-11-01T00:00:00Z',
-          updated_at: '2024-11-01T00:00:00Z',
-          job_post: {
-            id: 'job-1',
-            title: '基礎工事',
-            trade: '基礎工',
-            description: '住宅の基礎工事を行います',
-            unit_price: 150000,
-            currency: 'JPY',
-            start_date: '2024-12-01',
-            end_date: '2024-12-05'
-          }
-        },
-        {
-          id: 'slot-2',
-          tenant_id: 'tenant-1',
-          job_post_id: 'job-2',
-          work_date: '2024-12-03',
-          status: 'available',
-          claimed_by_company: null,
-          claimed_by_user: null,
-          claimed_at: null,
-          created_at: '2024-11-01T00:00:00Z',
-          updated_at: '2024-11-01T00:00:00Z',
-          job_post: {
-            id: 'job-2',
-            title: '鉄筋工事',
-            trade: '鉄筋工',
-            description: 'RC構造の鉄筋組立作業',
-            unit_price: 200000,
-            currency: 'JPY',
-            start_date: '2024-12-03',
-            end_date: '2024-12-07'
-          }
-        }
-      ];
-      setAvailableSlots(dummySlots);
+      // 自社条件フィルタが有効な場合
+      if (companyFilterEnabled) {
+        const profile = getCompanyProfile(currentUser.id);
+        slots = filterSlotsByCompanyProfile(slots, profile);
+      }
+
+      setAvailableSlots(slots);
     } catch (error) {
       console.error('Failed to fetch slots:', error);
     } finally {
@@ -97,8 +66,19 @@ export default function SubcontractorDashboard() {
     }
   };
 
+  // 検索実行ハンドラ
+  const handleSearch = (params: SearchParams) => {
+    setSearchParams({ ...params, status: params.status || 'available' });
+    fetchAvailableSlots({ ...params, status: params.status || 'available' });
+  };
+
+  // 自社条件フィルタトグル
+  const handleCompanyFilterToggle = (enabled: boolean) => {
+    setCompanyFilterEnabled(enabled);
+  };
+
   // 詳細予約フォームを開く
-  const openBookingForm = (slot: JobSlotWithPost) => {
+  const openBookingForm = (slot: MockJobSlotWithPost) => {
     setSelectedSlot(slot);
     setShowBookingForm(true);
   };
@@ -162,10 +142,22 @@ export default function SubcontractorDashboard() {
       router.push('/');
       return;
     }
-    setCurrentUser(JSON.parse(user));
+    const parsedUser = JSON.parse(user);
+    setCurrentUser(parsedUser);
 
-    fetchAvailableSlots();
+    // 初回登録チェック & 自社条件フィルタの初期値設定
+    const hasProfile = hasCompanyProfile(parsedUser.id);
+    if (!hasProfile) {
+      setShowFirstTimeModal(true);
+      setCompanyFilterEnabled(false); // 未登録時はフィルタOFF
+    }
   }, [router]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchAvailableSlots();
+    }
+  }, [currentUser, companyFilterEnabled]);
 
   const logout = () => {
     localStorage.removeItem('currentUser');
@@ -185,22 +177,31 @@ export default function SubcontractorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-16 md:pb-0">
       {/* ナビゲーションバー */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-bold text-gray-900">
-                🏗️ FCFS工事予約システム
+            {/* モバイル: タイトルのみ表示 */}
+            <div className="flex items-center space-x-2 md:space-x-4">
+              <h1 className="text-base md:text-xl font-bold text-gray-900">
+                🏗️ ダンドリブッキング
               </h1>
-              <span className="text-sm text-gray-500">下請け業者向け</span>
+              <span className="hidden md:inline text-sm text-gray-500">下請け業者向け</span>
             </div>
-            <div className="flex items-center space-x-4">
+
+            {/* デスクトップ: 全ボタン表示 */}
+            <div className="hidden md:flex items-center space-x-4">
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <span className="font-medium">{currentUser.name}</span>
                 <span>({currentUser.role})</span>
               </div>
+              <button
+                onClick={() => router.push('/subcontractor/settings')}
+                className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+              >
+                自社情報設定
+              </button>
               <button
                 onClick={() => router.push('/contractor')}
                 className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
@@ -224,13 +225,13 @@ export default function SubcontractorDashboard() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* ヘッダー */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+        {/* ヘッダー - モバイル最適化 */}
+        <div className="text-center mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2 md:mb-4">
             工事スロット予約
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-sm md:text-xl text-gray-600">
             利用可能な工事スロットから選択して予約
           </p>
         </div>
@@ -266,9 +267,20 @@ export default function SubcontractorDashboard() {
           </div>
         </div>
 
+        {/* 検索フィルタフォーム */}
+        <SearchFilterForm
+          onSearch={handleSearch}
+          initialParams={searchParams}
+          showCompanyFilter={true}
+          companyFilterEnabled={companyFilterEnabled}
+          onCompanyFilterToggle={handleCompanyFilterToggle}
+        />
+
         {/* 利用可能なスロット */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">利用可能な工事スロット</h2>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+            利用可能な工事スロット ({availableSlots.length}件)
+          </h2>
 
           {loading ? (
             <div className="text-center py-8">
@@ -286,31 +298,56 @@ export default function SubcontractorDashboard() {
               </button>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-4 md:grid md:gap-6 md:grid-cols-2 lg:grid-cols-3 md:space-y-0">
               {availableSlots.map((slot) => (
                 <div
                   key={slot.id}
-                  className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
+                  className="border border-gray-200 rounded-lg p-4 md:p-6 hover:shadow-lg transition-shadow"
                 >
                   <div className="mb-4">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                    {/* モバイル最適化: 情報優先度 = 日付 > 価格 > エリア > 職種 */}
+                    <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
                       {slot.job_post.title}
                     </h3>
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <p><span className="font-medium">職種:</span> {slot.job_post.trade}</p>
-                      <p><span className="font-medium">作業日:</span> {slot.work_date}</p>
-                      <p><span className="font-medium">単価:</span> ¥{slot.job_post.unit_price.toLocaleString()}</p>
-                      <p><span className="font-medium">期間:</span> {slot.job_post.start_date} 〜 {slot.job_post.end_date}</p>
+
+                    {/* 日付（最優先） */}
+                    <div className="mb-2 p-2 bg-blue-50 rounded">
+                      <p className="text-sm font-bold text-blue-900">
+                        📅 {slot.work_date}
+                      </p>
                     </div>
+
+                    {/* 価格（2番目） */}
+                    <div className="mb-2 p-2 bg-green-50 rounded">
+                      <p className="text-lg font-bold text-green-900">
+                        ¥{slot.job_post.unit_price.toLocaleString()}
+                      </p>
+                    </div>
+
+                    {/* エリア（3番目） */}
+                    <p className="text-sm text-gray-700 mb-1">
+                      <span className="font-medium">📍 エリア:</span> {slot.project.address}
+                    </p>
+
+                    {/* 職種（4番目） */}
+                    <p className="text-sm text-gray-700 mb-1">
+                      <span className="font-medium">🔧 職種:</span> {slot.job_post.trade}
+                    </p>
+
+                    {/* その他情報 */}
+                    <p className="text-sm text-gray-600 mb-1">
+                      <span className="font-medium">プロジェクト:</span> {slot.project.name}
+                    </p>
+
                     {slot.job_post.description && (
-                      <p className="mt-2 text-sm text-gray-700">{slot.job_post.description}</p>
+                      <p className="mt-2 text-sm text-gray-600 line-clamp-2">{slot.job_post.description}</p>
                     )}
                   </div>
 
                   <div className="space-y-2">
                     <button
                       onClick={() => openBookingForm(slot)}
-                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      className="w-full px-4 py-3 md:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-base md:text-sm"
                     >
                       詳細予約フォーム
                     </button>
@@ -318,14 +355,14 @@ export default function SubcontractorDashboard() {
                     <button
                       onClick={() => quickClaim(slot.id)}
                       disabled={!companyId.trim() || claimingSlot === slot.id}
-                      className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                      className="w-full px-4 py-3 md:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-base md:text-sm"
                     >
                       {claimingSlot === slot.id ? '予約中...' : '簡単予約'}
                     </button>
 
                     <button
                       onClick={() => fetchAlternatives(slot.id)}
-                      className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                      className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
                     >
                       代替案を見る
                     </button>
@@ -371,7 +408,7 @@ export default function SubcontractorDashboard() {
 
         {/* フッター */}
         <div className="mt-12 text-center text-gray-500 text-sm">
-          <p>© 2024 FCFS工事予約システム</p>
+          <p>© 2024 ダンドリブッキング</p>
           <div className="mt-2 space-x-4">
             <a href="/dashboard" className="hover:text-gray-700 transition-colors">
               予約状況ダッシュボード
@@ -404,7 +441,45 @@ export default function SubcontractorDashboard() {
           isOpen={showBookingHistory}
           onClose={() => setShowBookingHistory(false)}
         />
+
+        {/* 初回登録モーダル */}
+        {showFirstTimeModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 max-w-md">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">自社情報を登録してください</h2>
+              <p className="text-gray-600 mb-6">
+                対応可能な職種やエリアなどの自社情報を登録すると、あなたの会社に合った案件のみが表示されます。
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowFirstTimeModal(false);
+                    router.push('/subcontractor/settings');
+                  }}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                >
+                  登録する
+                </button>
+                <button
+                  onClick={() => {
+                    setShowFirstTimeModal(false);
+                    setCompanyFilterEnabled(false);
+                  }}
+                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                >
+                  後で
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* モバイルボトムナビゲーション */}
+      <MobileBottomNav />
+
+      {/* Push通知許可リクエストプロンプト */}
+      <PushNotificationPrompt />
     </div>
   );
 }

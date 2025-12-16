@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 interface ImportError {
   row: number;
   field?: string;

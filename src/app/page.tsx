@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 interface UserType {
   id: string;
   name: string;
@@ -84,7 +86,7 @@ export default function LoginPage() {
         {/* ヘッダー */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            🏗️ FCFS工事予約システム
+            🏗️ ダンドリブッキング
           </h1>
           <p className="text-2xl text-gray-600 mb-4">
             業者タイプを選択してシステムにアクセス
@@ -139,7 +141,7 @@ export default function LoginPage() {
 
         {/* フッター */}
         <div className="mt-12 text-center text-gray-500 text-sm">
-          <p>© 2024 FCFS工事予約システム - デモ環境</p>
+          <p>© 2024 ダンドリブッキング - デモ環境</p>
           <p className="mt-1">
             本画面はデモ用です。実際の運用では適切な認証システムを使用してください。
           </p>

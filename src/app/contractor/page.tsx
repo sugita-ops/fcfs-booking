@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation';
 import ProjectForm from '@/components/ProjectForm';
 import SlotForm from '@/components/SlotForm';
 import SubcontractorForm from '@/components/SubcontractorForm';
+import SearchFilterForm from '@/components/SearchFilterForm';
+import { getSlots, SearchParams, MockJobSlotWithPost } from '@/lib/mock-data';
+
+export const dynamic = 'force-dynamic';
 
 interface Project {
   id: string;
@@ -45,15 +49,16 @@ interface ContractorStats {
 
 export default function ContractorDashboard() {
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'slots' | 'subcontractors'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'slots' | 'subcontractors' | 'integrations'>('overview');
   const [stats, setStats] = useState<ContractorStats | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [jobSlots, setJobSlots] = useState<JobSlot[]>([]);
+  const [jobSlots, setJobSlots] = useState<MockJobSlotWithPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [showSlotForm, setShowSlotForm] = useState(false);
   const [showSubcontractorForm, setShowSubcontractorForm] = useState(false);
   const [subcontractors, setSubcontractors] = useState<any[]>([]);
+  const [searchParams, setSearchParams] = useState<SearchParams>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -76,22 +81,15 @@ export default function ContractorDashboard() {
     loadContractorData();
   }, [router]);
 
-  const loadContractorData = async () => {
+  const loadContractorData = async (params: SearchParams = {}) => {
     setLoading(true);
 
-    // ダミーデータ（実際のAPIと置き換え）
-    const dummyStats: ContractorStats = {
-      totalProjects: 15,
-      activeProjects: 8,
-      completedProjects: 7,
-      totalBudget: 45000000,
-      totalSpent: 32000000,
-      openSlots: 12,
-      assignedSlots: 25,
-      totalRevenue: 38000000
-    };
+    // localStorageからプロジェクト読み込み
+    const savedProjects = localStorage.getItem('projects');
+    const loadedProjects: Project[] = savedProjects ? JSON.parse(savedProjects) : [];
 
-    const dummyProjects: Project[] = [
+    // デフォルトダミーデータ（プロジェクトが0件の場合のみ）
+    const dummyProjects: Project[] = loadedProjects.length > 0 ? [] : [
       {
         id: 'proj-1',
         name: '新宿オフィスビル建設',
@@ -133,46 +131,37 @@ export default function ContractorDashboard() {
       }
     ];
 
-    const dummyJobSlots: JobSlot[] = [
-      {
-        id: 'slot-1',
-        projectId: 'proj-1',
-        projectName: '新宿オフィスビル建設',
-        trade: '基礎工',
-        workDate: '2024-12-01',
-        status: 'open',
-        assignedCompany: null,
-        unitPrice: 150000,
-        description: '基礎コンクリート打設作業'
-      },
-      {
-        id: 'slot-2',
-        projectId: 'proj-1',
-        projectName: '新宿オフィスビル建設',
-        trade: '鉄筋工',
-        workDate: '2024-12-03',
-        status: 'assigned',
-        assignedCompany: '鉄筋工業(株)',
-        unitPrice: 200000,
-        description: '鉄筋組立作業'
-      },
-      {
-        id: 'slot-3',
-        projectId: 'proj-2',
-        projectName: '渋谷マンション改修',
-        trade: '内装工',
-        workDate: '2024-12-20',
-        status: 'open',
-        assignedCompany: null,
-        unitPrice: 120000,
-        description: '室内クロス張替え'
-      }
-    ];
+    const allProjects = [...loadedProjects, ...dummyProjects];
+
+    // 統計情報を計算
+    const activeProjects = allProjects.filter(p => p.status === 'in_progress').length;
+    const completedProjects = allProjects.filter(p => p.status === 'completed').length;
+    const totalBudget = allProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
+    const totalSpent = allProjects.reduce((sum, p) => sum + (p.actualCost || 0), 0);
+
+    const dummyStats: ContractorStats = {
+      totalProjects: allProjects.length,
+      activeProjects,
+      completedProjects,
+      totalBudget,
+      totalSpent,
+      openSlots: 12,
+      assignedSlots: 25,
+      totalRevenue: totalSpent
+    };
+
+    // モックデータから工事スロット取得
+    const slots = getSlots(params);
 
     setStats(dummyStats);
-    setProjects(dummyProjects);
-    setJobSlots(dummyJobSlots);
+    setProjects(allProjects);
+    setJobSlots(slots);
     setLoading(false);
+  };
+
+  const handleSearch = (params: SearchParams) => {
+    setSearchParams(params);
+    loadContractorData(params);
   };
 
   const getStatusColor = (status: string) => {
@@ -256,22 +245,25 @@ export default function ContractorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
+      {/* ヘッダー - モバイル対応 */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-gray-900">
-                🏗️ 元請けダッシュボード
+            {/* モバイル: タイトルのみ */}
+            <div className="flex items-center space-x-2 md:space-x-4">
+              <h1 className="text-base md:text-2xl font-bold text-gray-900">
+                🏗️ ダンドリブッキング
               </h1>
               {currentUser && (
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
                   <span className="font-medium">{currentUser.name}</span>
                   <span>({currentUser.role})</span>
                 </div>
               )}
             </div>
-            <div className="flex items-center space-x-4">
+
+            {/* デスクトップ: 全ボタン表示 */}
+            <div className="hidden md:flex items-center space-x-4">
               <button
                 onClick={() => router.push('/subcontractor')}
                 className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
@@ -298,7 +290,8 @@ export default function ContractorDashboard() {
                 { key: 'overview', label: '概要', icon: '📊' },
                 { key: 'projects', label: 'プロジェクト管理', icon: '🏗️' },
                 { key: 'slots', label: '工事スロット管理', icon: '📅' },
-                { key: 'subcontractors', label: '下請け業者', icon: '🤝' }
+                { key: 'subcontractors', label: '下請け業者', icon: '🤝' },
+                { key: 'integrations', label: 'API連携', icon: '🔗' }
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -496,74 +489,79 @@ export default function ContractorDashboard() {
 
         {/* 工事スロット管理タブ */}
         {activeTab === 'slots' && (
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">工事スロット管理</h3>
-              <button
-                onClick={() => setShowSlotForm(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                新規スロット作成
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      プロジェクト
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      職種
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      作業日
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      ステータス
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      割当業者
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      単価
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      操作
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {jobSlots.map((slot) => (
-                    <tr key={slot.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{slot.projectName}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {slot.trade}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {slot.workDate}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(slot.status)}`}>
-                          {getStatusText(slot.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {slot.assignedCompany || '未割当'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ¥{slot.unitPrice.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button className="text-blue-600 hover:text-blue-900 mr-3">編集</button>
-                        <button className="text-red-600 hover:text-red-900">削除</button>
-                      </td>
+          <div className="space-y-6">
+            {/* 検索フィルタフォーム */}
+            <SearchFilterForm onSearch={handleSearch} initialParams={searchParams} />
+
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">工事スロット管理 ({jobSlots.length}件)</h3>
+                <button
+                  onClick={() => setShowSlotForm(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  新規スロット作成
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        プロジェクト
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        職種
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        作業日
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ステータス
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        割当業者
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        単価
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        操作
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {jobSlots.map((slot) => (
+                      <tr key={slot.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{slot.project.name}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {slot.job_post.trade}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {slot.work_date}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(slot.status)}`}>
+                            {getStatusText(slot.status)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {slot.claimed_by_company || '未割当'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          ¥{slot.job_post.unit_price.toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button className="text-blue-600 hover:text-blue-900 mr-3">編集</button>
+                          <button className="text-red-600 hover:text-red-900">削除</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -600,6 +598,65 @@ export default function ContractorDashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* API連携タブ */}
+        {activeTab === 'integrations' && (
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900">外部システム連携</h3>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* ダンドリワーク API 連携カード */}
+                <div
+                  onClick={() => router.push('/contractor/integrations/dandori-work')}
+                  className="border border-gray-200 rounded-lg p-6 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span className="text-2xl">🔗</span>
+                      </div>
+                    </div>
+                    <div className="ml-4 flex-1">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        ダンドリワーク API 連携
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        ダンドリワークから現場情報を自動取得し、プロジェクトとして同期します。
+                      </p>
+                      <div className="flex items-center text-sm text-blue-600">
+                        <span>設定画面を開く →</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 将来の連携候補（プレースホルダー） */}
+                <div className="border border-gray-200 rounded-lg p-6 opacity-50 cursor-not-allowed">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <span className="text-2xl">📊</span>
+                      </div>
+                    </div>
+                    <div className="ml-4 flex-1">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        その他の連携
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        今後、他の外部システムとの連携を追加予定です。
+                      </p>
+                      <div className="flex items-center text-sm text-gray-400">
+                        <span>準備中</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
